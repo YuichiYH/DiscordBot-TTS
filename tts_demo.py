@@ -39,13 +39,34 @@ async def on_ready():
 	print(discord.__version__)
 	await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name =f"{bot.command_prefix}help"))
 
+	if not(exists(r'json\channel.json')):
+		with open(r'json\channel.json', 'x') as f:
+			json.dump({}, f, indent= 4)
+
+	if not(exists(r'json\user.json')):
+		with open(r'json\user.json', 'x') as f:
+			users = {}
+			print(bot.guilds)
+			for guild in bot.guilds:
+				users[str(guild.id)] = []
+
+			json.dump(users, f, indent= 4)
+
 @bot.event
 async def on_message(message):	
+	with open(r'json\channel.json', 'r') as f:
+		channels = json.load(f)
 	if message.author.id == bot.user.id:
 		return
-	
+	with open(r'json\user.json', "r") as f:
+		users = json.load(f)
+
+	print(str(message.author))
+	print(str(message.author.id))
+	print(str(users[str(message.guild.id)]))
+
 	if message.content[0] != "|":
-		if channels[str(message.guild.id)] == str(message.channel.id):
+		if (channels[str(message.guild.id)] == str(message.channel.id)) and (("<@" + str(message.author.id) + ">") in users[str(message.guild.id)]):
 			tts = gtts.gTTS(text = message.content, lang="pt-br")
 			tts.save("tts/tts.mp3")
 			message.guild.voice_client.play(FFmpegPCMAudio(executable=ffmpeg, source="tts/tts.mp3"))
@@ -53,6 +74,8 @@ async def on_message(message):
 
 @bot.command(name = "channel")
 async def channel(ctx):
+	with open(r'json\channel.json', 'r') as f:
+		channels = json.load(f)
 	read_channel = ctx.message.channel
 
 	channels[str(ctx.guild.id)] = str(read_channel.id)
@@ -70,20 +93,26 @@ async def connect(ctx):
 
 	await channel.connect()
 
-if not(exists(r'json\channel.json')):
-	with open(r'json\channel.json', 'x') as f:
-		json.dump({}, f)
+@bot.command(name = "adduser")
+async def adduser(ctx, user):
+	with open(r'json\user.json', "r") as f:
+		users = json.load(f)
+	users[str(ctx.guild.id)].append(user)
+	
+	with open(r'json\user.json', 'w') as f:
+		json.dump(users, f, indent= 4)
+	
+	await ctx.send("added " + user + "to the list")
 
-if not(exists(r'json\user.json')):
-	with open(r'json\user.json', 'x') as f:
-		guilds = {}
-
-with open(r'json\channel.json', 'r') as f:
-	channels = json.load(f)
-
-with open(r'json\user.json', "r") as f:
-	users = json.load(f)
-
-
+@bot.command(name = "removeuser", aliases = ["ruser", "remuser"])
+async def removeuser(ctx, user):
+	with open(r'json\user.json', "r") as f:
+		users = json.load(f)
+	users[str(ctx.guild.id)].remove(user)
+	
+	with open(r'json\user.json', 'w') as f:
+		json.dump(users, f, indent= 4)
+	
+	await ctx.send("removed " + user + "from the list")
 
 bot.run(token)
