@@ -63,13 +63,15 @@ async def on_message(message):
 
 	print(str(message.author))
 	print(str(message.author.id))
+	print(str(message.guild.id))
 	print(str(users[str(message.guild.id)]))
 
 	if message.content[0] != "|":
-		if (channels[str(message.guild.id)] == str(message.channel.id)) and (("<@" + str(message.author.id) + ">") in users[str(message.guild.id)]):
-			tts = gtts.gTTS(text = message.content, lang="pt-br")
-			tts.save("tts/tts.mp3")
-			message.guild.voice_client.play(FFmpegPCMAudio(executable=ffmpeg, source="tts/tts.mp3"))
+		if (channels[str(message.guild.id)] == str(message.channel.id)):
+			if (("<@" + str(message.author.id) + ">") in users[str(message.guild.id)]) or (len(users[str(message.guild.id)]) == 0):
+				tts = gtts.gTTS(text = message.content, lang="pt-br")
+				tts.save("tts/tts.mp3")
+				message.guild.voice_client.play(FFmpegPCMAudio(executable=ffmpeg, source="tts/tts.mp3"))
 	await bot.process_commands(message)
 
 @bot.command(name = "channel")
@@ -93,6 +95,10 @@ async def connect(ctx):
 
 	await channel.connect()
 
+@bot.command(name = "disconnect", aliases=["leave","exit"])
+async def disconnect(ctx):
+	await ctx.voice_client.disconnect()
+
 @bot.command(name = "adduser")
 async def adduser(ctx, user):
 	with open(r'json\user.json', "r") as f:
@@ -108,8 +114,12 @@ async def adduser(ctx, user):
 async def removeuser(ctx, user):
 	with open(r'json\user.json', "r") as f:
 		users = json.load(f)
-	users[str(ctx.guild.id)].remove(user)
 	
+	try:
+		users[str(ctx.guild.id)].remove(user)
+	except:
+		await ctx.send("")
+
 	with open(r'json\user.json', 'w') as f:
 		json.dump(users, f, indent= 4)
 	
