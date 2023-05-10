@@ -66,7 +66,7 @@ async def on_message(message):
 	print(str(message.guild.id))
 	print(str(users[str(message.guild.id)]))
 
-	if message.content[0] != "|":
+	if message.content[0] != prefix:
 		if (channels[str(message.guild.id)] == str(message.channel.id)):
 			if (("<@" + str(message.author.id) + ">") in users[str(message.guild.id)]) or (len(users[str(message.guild.id)]) == 0):
 				tts = gtts.gTTS(text = message.content, lang="pt-br")
@@ -125,4 +125,7 @@ async def removeuser(ctx, user):
 	
 	await ctx.send("removed " + user + "from the list")
 
-bot.run(token)
+async def main():
+	await bot.start(token)
+
+asyncio.run(main())
